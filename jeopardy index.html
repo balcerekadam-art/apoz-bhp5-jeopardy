@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#09162c">
+  <meta name="description" content="Offline Jeopardy vocabulary game for NP-BHP5. Two teams, 25 questions, scoring and a timer.">
+  <title>NPBHP5 | Safety Jeopardy</title>
+  <style>
+  :root{color-scheme:dark;--navy:#091629;--panel:#101f39;--panel2:#15284a;--muted:#9fb5ce;--border:#314969;--gold:#ffcf60;--cyan:#64d9cd;--ice:#eef4ff;--red:#ff7f85;--green:#7ee1ae;--shadow:0 17px 60px rgba(0,0,0,.38)}
+  *{box-sizing:border-box}html,body{margin:0;min-height:100%;background:var(--navy);color:var(--ice);font-family:Inter,'Segoe UI',Arial,sans-serif}
+  body{background:radial-gradient(ellipse at 2% 8%,rgba(20,87,160,.25),transparent 48%),radial-gradient(ellipse at 95% 95%,rgba(42,149,163,.12),transparent 45%),var(--navy)}
+  button,input{font:inherit}button{cursor:pointer}button:disabled{cursor:default}
+  button:focus-visible,input:focus-visible{outline:3px solid var(--gold);outline-offset:3px}
+  .shell{max-width:1536px;margin:auto;padding:clamp(13px,2vw,26px);min-height:100dvh;display:flex;flex-direction:column;gap:16px}
+  .header{display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap}
+  .eyebrow{text-transform:uppercase;letter-spacing:.19em;font-size:11px;color:var(--cyan);font-weight:900}
+  h1{margin:4px 0 0;letter-spacing:.025em;font-size:clamp(28px,3.25vw,52px);line-height:1.05}
+  h1 span{color:var(--gold)}.header-actions{display:flex;flex-wrap:wrap;gap:7px}
+  .smallbtn{background:#182f50;border:1px solid var(--border);padding:10px 13px;border-radius:10px;color:var(--ice);font-weight:750;font-size:12px;transition:.12s}
+  .smallbtn:hover{background:#224067}.smallbtn.alert{color:#ffb5b6}
+  .scorebar{display:grid;grid-template-columns:1fr minmax(170px,.56fr) 1fr;gap:12px}
+  .team{position:relative;background:linear-gradient(135deg,#152a4c,#132440);border:2px solid #314b69;border-radius:17px;padding:13px 17px;min-width:0;transition:.2s;text-align:left}
+  .team.active{border-color:var(--cyan);box-shadow:0 0 0 1px rgba(100,217,205,.22),0 0 32px rgba(100,217,205,.1)}
+  .team-tag{font-size:11px;letter-spacing:.13em;font-weight:900;text-transform:uppercase;color:#bad0ec;display:flex;align-items:center;justify-content:space-between}
+  .team.active .team-tag::after{content:'● TERAZ GRA';font-size:10px;color:var(--cyan)}
+  .team input{background:transparent;color:#eaf4ff;border:0;border-bottom:1px dotted #6a85a4;padding:3px 0;margin-top:8px;display:block;width:94%;font-weight:850;font-size:clamp(14px,1.6vw,22px);outline-offset:0}
+  .scoreline{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:8px}
+  .score{font-size:clamp(28px,3.8vw,52px);font-weight:950;letter-spacing:-.04em;line-height:1;color:var(--gold);font-variant-numeric:tabular-nums}
+  .edit-score{display:flex;gap:5px}.mini{background:#203c61;border:1px solid #3b5977;border-radius:8px;padding:6px 8px;color:white;font-weight:800;font-size:13px}
+  .vs-panel{border:1px solid var(--border);border-radius:17px;background:rgba(16,32,56,.77);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;text-align:center;padding:10px}
+  .vs{font-size:clamp(20px,2.2vw,34px);font-weight:1000;color:var(--gold);letter-spacing:.08em}
+  .progress{color:var(--muted);font-weight:700;font-size:12px}
+  .board{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:clamp(5px, .65vw, 10px);flex:1;min-height:405px}
+  .category{display:flex;align-items:center;justify-content:center;min-height:73px;background:linear-gradient(180deg,#234681,#173264);border:1px solid #5074b0;border-radius:10px;padding:9px 4px;text-align:center;font-size:clamp(10px,1.25vw,16px);font-weight:950;letter-spacing:.035em;text-transform:uppercase;line-height:1.2;text-wrap:balance;color:#fff}
+  .tile{position:relative;display:flex;justify-content:center;align-items:center;min-height:clamp(63px,9vh,118px);border:1px solid #315ba2;border-radius:11px;background:linear-gradient(135deg,#17458d 0%,#12366f 68%,#0f2d60 100%);color:var(--gold);font-size:clamp(23px,3.8vw,49px);font-weight:1000;letter-spacing:.015em;text-shadow:0 2px 0 rgba(0,0,0,.3);transition:transform .14s,filter .14s,background .2s}
+  .tile:not(:disabled):hover{filter:brightness(1.22);transform:translateY(-2px);border-color:var(--gold)}
+  .tile.used{color:#536784;background:#101e37;border-color:#243753;box-shadow:inset 0 0 0 1px #172440;text-shadow:none}
+  .tile.used::before{content:'✓';font-size:26px;color:#5a7192}
+  .footer{display:flex;gap:13px;align-items:center;justify-content:space-between;flex-wrap:wrap;color:var(--muted);font-size:12px;border-top:1px solid #223650;padding-top:11px}
+  .footer strong{color:var(--cyan)}.footer-actions{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+  .help{display:none;background:#112641;border:1px solid #3b5873;border-radius:13px;padding:13px 17px;color:#e0ebfa;font-size:13px;line-height:1.5}
+  .help.open{display:block}.help p{margin:4px 0}.help b{color:var(--gold)}
+  dialog{padding:0;border:0;background:transparent;color:var(--ice);width:min(940px,calc(100vw - 26px));max-height:min(95dvh,940px);overflow:auto}
+  dialog::backdrop{background:rgba(0,6,20,.85);backdrop-filter:blur(9px)}
+  .modal{border-radius:22px;border:2px solid #50729a;background:linear-gradient(155deg,#142a4c,#0b1b32);padding:clamp(18px,3vw,33px);box-shadow:var(--shadow)}
+  .modal-head{display:flex;align-items:start;justify-content:space-between;gap:10px}
+  .modal-tag{color:var(--cyan);text-transform:uppercase;font-size:12px;letter-spacing:.11em;font-weight:950}
+  .modal-value{color:var(--gold);font-weight:1000;font-size:clamp(25px,3.5vw,41px)}
+  .close{background:#1e3656;border:1px solid #496788;color:#fff;border-radius:9px;font-size:19px;padding:5px 12px}
+  .prompt-label{font-size:12px;letter-spacing:.13em;text-transform:uppercase;color:#c6d7ee;font-weight:900;margin-top:22px;text-align:center}
+  .clue{min-height:165px;display:flex;align-items:center;justify-content:center;text-align:center;color:white;font-size:clamp(28px,4.3vw,53px);font-weight:950;line-height:1.12;text-wrap:balance;padding:12px}
+  .turn-row{display:flex;align-items:center;justify-content:center;gap:12px;color:#c9d7ea;font-size:14px;flex-wrap:wrap}
+  .turn-name{font-weight:950;color:var(--cyan)}.timer{margin:14px auto 6px;max-width:420px;display:flex;align-items:center;gap:13px;justify-content:center}
+  #seconds{min-width:90px;text-align:center;font-size:clamp(37px,4.7vw,58px);font-weight:950;font-variant-numeric:tabular-nums;color:var(--gold)}
+  .timebar{height:8px;background:#385074;border-radius:99px;overflow:hidden;flex:1}.timefill{height:100%;background:var(--cyan);width:100%;transition:width .2s linear}
+  .timer.late #seconds{color:var(--red)}.timer.late .timefill{background:var(--red)}
+  .actions{display:flex;justify-content:center;flex-wrap:wrap;gap:9px;margin-top:14px}
+  .action{background:#20466e;border:1px solid #517da8;color:#fff;border-radius:11px;padding:12px 18px;font-weight:850;font-size:14px;min-height:44px}
+  .action:hover{filter:brightness(1.16)}.action.primary{background:#f4c85d;color:#14203a;border-color:#ffe39a}
+  .action.good{background:#1e775b;border-color:#47b68b}.action.bad{background:#74333e;border-color:#ba6175}
+  .action.ghost{background:transparent;border-color:#49617f}
+  .answer-wrap{background:#082a38;border:1px solid #327b82;border-radius:12px;padding:17px;margin-top:16px;text-align:center}
+  .answer-label{color:var(--cyan);font-size:11px;font-weight:900;letter-spacing:.11em;text-transform:uppercase}
+  .answer{color:#fff;font-size:clamp(23px,3vw,37px);font-weight:900;margin-top:8px}
+  .alternate{color:#c0d0e1;font-size:13px;margin-top:7px}
+  .hidden{display:none!important}.status-msg{text-align:center;margin-top:10px;color:#aabeda;font-size:12px}
+  .mobile-note{display:none}.finished{color:var(--gold);font-weight:900}
+  @media(max-width:750px){.scorebar{grid-template-columns:1fr 1fr}.vs-panel{grid-column:span 2;grid-row:2;min-height:45px;flex-direction:row}.scorebar .team:nth-child(2){grid-column:2;grid-row:1}.category{font-size:9px;word-break:break-word;padding:4px 2px;min-height:51px}.tile{min-height:65px;font-size:21px}.board{min-height:350px;gap:4px}.shell{gap:11px}.mini{padding:6px}.mobile-note{display:block}.clue{min-height:130px}.header-actions{width:100%}}
+  @media print {body{background:white;color:black}.header-actions,.scorebar,.footer,.help{display:none}.category,.tile{print-color-adjust:exact}.shell{max-width:none}}
+  </style>
+</head>
+<body>
+<main class="shell">
+<header class="header">
+ <div><div class="eyebrow">AKADEMIA POŻARNICZA • NP–BHP5 / NP–BHP24 • ENGLISH</div><h1>SAFETY <span>JEOPARDY!</span></h1></div>
+ <div class="header-actions">
+  <button class="smallbtn" id="helpBtn" type="button">ⓘ Zasady</button>
+  <button class="smallbtn" id="undoBtn" type="button">↶ Cofnij punktację</button>
+  <button class="smallbtn" id="fullBtn" type="button">⛶ Pełny ekran</button>
+  <button class="smallbtn alert" id="resetBtn" type="button">↻ Nowa gra</button>
+ </div>
+</header>
+<section class="help" id="help" aria-live="polite"><p><b>Cel:</b> odczytaj polskie hasło i odpowiedz po angielsku pełnym pytaniem: <b>What is…? / What are…? / Who is…?</b> Za poprawne słowo i poprawną formę pytania otrzymujesz punkty.</p>
+ <p><b>Przebieg:</b> kliknij drużynę, która wybiera kategorię, następnie pole. Zegar rusza automatycznie (30 s). Naciśnij „Pokaż rozwiązanie”, a potem przyznaj punkty. „Szansa rywali” zmienia odpowiadającą drużynę i daje 15 sekund. Po rundzie kolejka wyboru przechodzi na przeciwną drużynę.</p>
+ <p><b>Punktacja:</b> domyślnie błędna odpowiedź = 0. Możesz włączyć karę punktową, a wyniki korygować przyciskami ±100. Zmieniaj osoby odpowiadające, aby każdy brał udział. Gra zapisuje stan lokalnie w tej przeglądarce, jeżeli jest to dostępne.</p></section>
+<section class="scorebar" aria-label="Wyniki drużyn">
+ <div class="team" id="team0" role="button" tabindex="0" aria-label="Wybierz drużynę A">
+  <div class="team-tag">TEAM A</div>
+  <input id="name0" maxlength="28" value="TEAM ALPHA" aria-label="Nazwa drużyny A" title="Kliknij, żeby zmienić nazwę drużyny">
+  <div class="scoreline"><span class="score" id="score0">0</span><span class="edit-score"><button class="mini" data-adjust="0,-100" type="button" aria-label="Drużyna A minus sto">−100</button><button class="mini" data-adjust="0,100" type="button" aria-label="Drużyna A plus sto">+100</button></span></div>
+ </div>
+ <div class="vs-panel"><div class="vs">VS</div><div class="progress" id="progress">0 / 25 odkrytych</div></div>
+ <div class="team" id="team1" role="button" tabindex="0" aria-label="Wybierz drużynę B">
+  <div class="team-tag">TEAM B</div>
+  <input id="name1" maxlength="28" value="TEAM BRAVO" aria-label="Nazwa drużyny B" title="Kliknij, żeby zmienić nazwę drużyny">
+  <div class="scoreline"><span class="score" id="score1">0</span><span class="edit-score"><button class="mini" data-adjust="1,-100" type="button" aria-label="Drużyna B minus sto">−100</button><button class="mini" data-adjust="1,100" type="button" aria-label="Drużyna B plus sto">+100</button></span></div>
+ </div>
+</section>
+<section class="board" id="board" aria-label="Plansza Jeopardy"></section>
+<footer class="footer">
+ <div><strong>25 haseł</strong> z lekcji: Chemical Safety + Warehouse Safety • jedno pytanie na turę • tryb offline</div>
+ <div class="footer-actions"><label><input type="checkbox" id="penalty"> Kary za złą odpowiedź (−punkty)</label><span id="finalStatus"></span></div>
+</footer>
+</main>
+<dialog id="qDialog" aria-label="Pytanie Jeopardy">
+<div class="modal">
+ <div class="modal-head"><div><div class="modal-tag" id="categoryLabel"></div><div class="modal-value" id="valueLabel">100 POINTS</div></div><button class="close" id="closeModal" type="button" aria-label="Zamknij bez rozstrzygnięcia">✕</button></div>
+ <div class="prompt-label">POLSKIE HASŁO • ODPOWIEDZ PYTANIEM PO ANGIELSKU</div>
+ <div class="clue" id="clueText"></div>
+ <div class="turn-row">Odpowiada: <span class="turn-name" id="playingTeam"></span><span id="turnMode"></span></div>
+ <div class="timer" id="timerBox"><span id="seconds">30</span><div class="timebar"><div class="timefill" id="timefill"></div></div><button class="smallbtn" id="pauseTimer" type="button">Ⅱ Pauza</button></div>
+ <div class="actions" id="preActions"><button class="action ghost" id="rivalBtn" type="button">⇄ Szansa rywali (15 s)</button><button class="action primary" id="showAnswer" type="button">Pokaż poprawną odpowiedź</button></div>
+ <div id="answerWrap" class="answer-wrap hidden"><div class="answer-label">PRAWIDŁOWA ODPOWIEDŹ W FORMIE PYTANIA</div><div class="answer" id="answerText"></div><div class="alternate" id="alternate"></div></div>
+ <div class="actions hidden" id="postActions"><button class="action good" id="awardBtn" type="button">✓ Poprawnie: przyznaj punkty</button><button class="action bad" id="wrongBtn" type="button">✕ Błędnie: nie przyznawaj</button><button class="action ghost" id="skipBtn" type="button">Pomiń bez punktów</button></div>
+ <div class="status-msg" id="modalStatus">Czas startuje automatycznie • 30 sekund na odpowiedź</div>
+</div>
+</dialog>
+<script>
+'use strict';
+const DATA=[{"id":"chem","name":"CHEMICAL SAFETY","pl":"Chemikalia","emoji":"⚗","cards":[{"value":100,"clue":"środki ochrony indywidualnej","answer":"What is PPE?","alternate":"What is personal protective equipment?","note":"PPE = personal protective equipment"},{"value":200,"clue":"opary / wyziewy","answer":"What are fumes?","alternate":"","note":"Liczba mnoga: are"},{"value":300,"clue":"skażenie / zanieczyszczenie","answer":"What is contamination?","alternate":"","note":"Nie mylić z containment"},{"value":400,"clue":"miejscowa wentylacja wyciągowa","answer":"What is local exhaust ventilation?","alternate":"","note":"Termin z poprzednich zajęć"},{"value":500,"clue":"materiały, których nie wolno przechowywać razem","answer":"What are incompatible materials?","alternate":"","note":"Akceptuj odpowiedź z wyrażeniem incompatible materials"}]},{"id":"warehouse","name":"THE WAREHOUSE","pl":"Magazyn","emoji":"▤","cards":[{"value":100,"clue":"magazyn","answer":"What is a warehouse?","alternate":"","note":""},{"value":200,"clue":"paleta","answer":"What is a pallet?","alternate":"","note":""},{"value":300,"clue":"alejka magazynowa","answer":"What is an aisle?","alternate":"","note":"An aisle: samogłoska na początku"},{"value":400,"clue":"strefa załadunku / rampa załadunkowa","answer":"What is a loading bay?","alternate":"","note":""},{"value":500,"clue":"wózek paletowy","answer":"What is a pallet mover?","alternate":"What is a pallet truck?","note":"Pallet truck dopuszczalne jako naturalny wariant"}]},{"id":"handling","name":"MANUAL HANDLING","pl":"Przenoszenie ładunków","emoji":"↗","cards":[{"value":100,"clue":"ładunek","answer":"What is a load?","alternate":"","note":""},{"value":200,"clue":"ręczne przemieszczanie ładunków","answer":"What is manual handling?","alternate":"","note":""},{"value":300,"clue":"wózek dwukołowy","answer":"What is a sack truck?","alternate":"What is a hand truck?","note":"Hand truck dopuszczalne, jeżeli odpowiada pokazywanemu sprzętowi"},{"value":400,"clue":"uraz pleców","answer":"What is a back injury?","alternate":"","note":""},{"value":500,"clue":"nieporęczny ładunek","answer":"What is a bulky load?","alternate":"","note":"Złożenie bulky + load z lekcji"}]},{"id":"risk","name":"RISK ASSESSMENT","pl":"Ocena ryzyka","emoji":"◈","cards":[{"value":100,"clue":"zagrożenie","answer":"What is a hazard?","alternate":"","note":""},{"value":200,"clue":"rozlany płyn / wyciek","answer":"What is a spill?","alternate":"","note":""},{"value":300,"clue":"przeszkoda utrudniająca przejście","answer":"What is an obstruction?","alternate":"","note":""},{"value":400,"clue":"ocena ryzyka","answer":"What is a risk assessment?","alternate":"","note":"Dopuszczalne What is risk assessment?"},{"value":500,"clue":"środek ograniczający ryzyko","answer":"What is a control measure?","alternate":"","note":""}]},{"id":"incident","name":"ACCIDENT INVESTIGATION","pl":"Wypadek i procedury","emoji":"✦","cards":[{"value":100,"clue":"przełożony / osoba nadzorująca","answer":"Who is a supervisor?","alternate":"What is a supervisor?","note":"Who lub What akceptowane"},{"value":200,"clue":"wyjście ewakuacyjne","answer":"What is an emergency exit?","alternate":"","note":""},{"value":300,"clue":"zablokowane przejście magazynowe","answer":"What is a blocked aisle?","alternate":"","note":""},{"value":400,"clue":"kontrola bezpieczeństwa","answer":"What is a safety inspection?","alternate":"","note":""},{"value":500,"clue":"raport z incydentu / zdarzenia","answer":"What is an incident report?","alternate":"","note":""}]}];
+const CELLS=DATA.flatMap((cat,c)=>cat.cards.map((card,r)=>({id:`${c}-${r}`,category:cat.name,...card})));
+const storeKey='NPBHP5_SAFETY_JEOPARDY_V1';
+const $=id=>document.getElementById(id);
+const initial=()=>({scores:[0,0],names:['TEAM ALPHA','TEAM BRAVO'],active:0,used:[],penalty:false});
+let state=initial(),history=[],q=null,timerId=null,remaining=30,paused=false,wasStolen=false,pickTeam=0;
+function persist(){try{localStorage.setItem(storeKey,JSON.stringify(state))}catch(e){}}
+try{const s=JSON.parse(localStorage.getItem(storeKey)||'null');if(s&&Array.isArray(s.scores)&&s.scores.length===2&&Array.isArray(s.used)&&Array.isArray(s.names)&&typeof s.active==='number'){state=s;state.used=state.used.filter(id=>CELLS.some(c=>c.id===id));}}catch(e){}
+function snapshot(){history.push(JSON.stringify(state));if(history.length>40)history.shift()}
+function renderBoard(){const b=$('board');b.replaceChildren();
+ DATA.forEach(cat=>{const d=document.createElement('div');d.className='category';d.textContent=cat.name;b.append(d)});
+ for(let r=0;r<5;r++)for(let c=0;c<5;c++){const cell=CELLS.find(x=>x.id===`${c}-${r}`),used=state.used.includes(cell.id);const tile=document.createElement('button');tile.type='button';tile.className='tile'+(used?' used':'');tile.disabled=used;tile.textContent=used?'':String(cell.value);tile.setAttribute('aria-label',`${cell.category}, ${cell.value} punktów`);tile.onclick=()=>openQuestion(cell);b.append(tile)}
+}
+function render(){renderBoard();for(let i=0;i<2;i++){$('score'+i).textContent=state.scores[i].toLocaleString('pl-PL');$('name'+i).value=state.names[i];$('team'+i).classList.toggle('active',state.active===i)}$('progress').textContent=`${state.used.length} / 25 odkrytych`;$('penalty').checked=state.penalty;$('undoBtn').disabled=history.length===0;
+ $('finalStatus').textContent=state.used.length===25?(state.scores[0]===state.scores[1]?'REMIS!':`🏆 Wygrywa ${state.names[state.scores[0]>state.scores[1]?0:1]}!`):'';
+ persist();}
+function setActive(i){state.active=i;render()}
+function stopClock(){if(timerId!==null){clearInterval(timerId);timerId=null}}
+function paintTime(){const s=$('seconds');s.textContent=String(remaining).padStart(2,'0');$('timefill').style.width=`${(remaining/(wasStolen?15:30))*100}%`;$('timerBox').classList.toggle('late',remaining<=10);$('pauseTimer').textContent=paused?'▶ Wznów':'Ⅱ Pauza'}
+function startClock(duration){stopClock();remaining=duration;paused=false;paintTime();timerId=setInterval(()=>{if(paused)return;remaining=Math.max(0,remaining-1);paintTime();if(remaining<=0){stopClock();$('modalStatus').textContent='⏰ Czas minął. Możesz pokazać odpowiedź lub dać szansę rywalom.'}},1000)}
+function openQuestion(cell){q=cell;wasStolen=false;pickTeam=state.active;$('categoryLabel').textContent=cell.category;$('valueLabel').textContent=`${cell.value} POINTS`;$('clueText').textContent=cell.clue;$('playingTeam').textContent=state.names[state.active];$('turnMode').textContent='';$('answerWrap').classList.add('hidden');$('postActions').classList.add('hidden');$('preActions').classList.remove('hidden');$('rivalBtn').disabled=false;$('modalStatus').textContent='Prawidłowa forma: What is…? / What are…? / Who is…?';$('qDialog').showModal();startClock(30)}
+function reveal(){if(!q)return;stopClock();paused=true;$('answerText').textContent=q.answer;$('alternate').textContent=q.alternate?`Inna akceptowana odpowiedź: ${q.alternate}`:'';$('alternate').classList.toggle('hidden',!q.alternate);$('answerWrap').classList.remove('hidden');$('preActions').classList.add('hidden');$('postActions').classList.remove('hidden');$('modalStatus').textContent='Zalicz wyraz i gramatycznie poprawne pytanie. Nauczyciel rozstrzyga warianty.'}
+function steal(){if(!q||wasStolen)return;wasStolen=true;state.active=1-pickTeam;$('playingTeam').textContent=state.names[state.active];$('turnMode').textContent='• PRZEJĘCIE';$('rivalBtn').disabled=true;startClock(15);$('modalStatus').textContent='Szansa dla rywali! 15 sekund.';paintScoresOnly()}
+function paintScoresOnly(){for(let i=0;i<2;i++)$('team'+i).classList.toggle('active',state.active===i)}
+function resolve(kind){if(!q)return;history.push(JSON.stringify({...state,active:pickTeam}));if(history.length>40)history.shift();if(kind==='correct')state.scores[state.active]+=q.value;if(kind==='wrong'&&state.penalty)state.scores[state.active]-=q.value;state.used.push(q.id);state.active=1-pickTeam;closeQuestion();render();}
+function closeQuestion(revert=false){stopClock();if(q&&revert)state.active=pickTeam;q=null;if($('qDialog').open)$('qDialog').close();render()}
+$('closeModal').onclick=()=>closeQuestion(true);$('qDialog').addEventListener('cancel',e=>{e.preventDefault();closeQuestion(true)});
+$('showAnswer').onclick=reveal;$('rivalBtn').onclick=steal;$('awardBtn').onclick=()=>resolve('correct');$('wrongBtn').onclick=()=>resolve('wrong');$('skipBtn').onclick=()=>resolve('skip');
+$('pauseTimer').onclick=()=>{if(!q||remaining===0)return;paused=!paused;paintTime()};
+for(let i=0;i<2;i++){$('team'+i).addEventListener('click',e=>{if(e.target.closest('input,button'))return;setActive(i)});$('team'+i).addEventListener('keydown',e=>{if(e.target.closest('input,button'))return;if(e.key==='Enter'||e.key===' '){e.preventDefault();setActive(i)}});$('name'+i).addEventListener('change',e=>{state.names[i]=(e.target.value.trim().slice(0,28)||`TEAM ${i?'B':'A'}`);render()})}
+document.querySelectorAll('[data-adjust]').forEach(b=>b.addEventListener('click',e=>{e.stopPropagation();const [i,delta]=b.dataset.adjust.split(',').map(Number);snapshot();state.scores[i]+=delta;render()}));
+$('penalty').addEventListener('change',e=>{state.penalty=e.target.checked;persist()});
+$('helpBtn').onclick=()=>{$('help').classList.toggle('open');$('helpBtn').textContent=$('help').classList.contains('open')?'ⓘ Ukryj zasady':'ⓘ Zasady'};
+$('undoBtn').onclick=()=>{if(history.length===0)return;state=JSON.parse(history.pop());render()};
+$('resetBtn').onclick=()=>{if(confirm('Rozpocząć zupełnie nową grę? Wyniki i odkryte pola zostaną wyzerowane.')){stopClock();state=initial();history=[];render()}};
+$('fullBtn').onclick=async()=>{try{if(document.fullscreenElement)await document.exitFullscreen();else await document.documentElement.requestFullscreen()}catch(e){alert('W tym trybie przeglądarka nie pozwala włączyć pełnego ekranu. Użyj klawisza F11.')}};
+render();
+</script>
+</body>
+</html>
